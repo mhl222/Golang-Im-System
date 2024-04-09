@@ -43,7 +43,7 @@ func (receiver *Server) ListenMessage() {
 	}
 }
 
-// BroadCast 广播消息
+// BroadCast 用户：广播消息
 func (receiver *Server) BroadCast(user *User, msg string) {
 	//sendMsg := fmt.Sprintf("[%s] %s: %s\n", user.Addr, user.Name, msg)
 	sendMsg := "[" + user.Addr + "]" + " " + user.Name + ": " + msg
@@ -53,13 +53,9 @@ func (receiver *Server) BroadCast(user *User, msg string) {
 func (receiver *Server) handler(con net.Conn) {
 	fmt.Println("链接建立成功")
 
-	// 用户上线，将用户加入OnlineMap
-	user := NewUser(con)
-	receiver.mapLock.Lock()
-	receiver.OnlineMap[user.Name] = user
-	receiver.mapLock.Unlock()
-	// 广播用户上线消息
-	receiver.BroadCast(user, "get online\r\n")
+	user := NewUser(con, receiver)
+
+	user.Online()
 
 	// 接受客户端消息
 	go func(conn net.Conn) {
@@ -67,13 +63,7 @@ func (receiver *Server) handler(con net.Conn) {
 		for {
 			n, err := con.Read(buf)
 			if n == 0 {
-				receiver.BroadCast(user, "off  online\r\n")
-				delete(receiver.OnlineMap, user.Name)
-				err := con.Close()
-				if err != nil {
-					fmt.Println("链接关闭失败", err)
-					return
-				}
+				user.Offline()
 				return
 			}
 
@@ -85,7 +75,7 @@ func (receiver *Server) handler(con net.Conn) {
 			// 提取用户消息
 			msg := string(buf[:n-1])
 			// 用户消息广播
-			receiver.BroadCast(user, msg)
+			user.DoMessage(msg)
 		}
 	}(con)
 }
