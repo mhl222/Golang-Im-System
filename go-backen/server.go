@@ -46,7 +46,7 @@ func (receiver *Server) ListenMessage() {
 // BroadCast 用户：广播消息
 func (receiver *Server) BroadCast(user *User, msg string) {
 	//sendMsg := fmt.Sprintf("[%s] %s: %s\n", user.Addr, user.Name, msg)
-	sendMsg := "[" + user.Addr + "]" + " " + user.Name + ": " + msg
+	sendMsg := "[" + user.Addr + "]" + " " + user.Name + ": " + msg + "\r\n"
 	receiver.Message <- sendMsg
 }
 
