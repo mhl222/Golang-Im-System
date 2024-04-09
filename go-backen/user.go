@@ -35,6 +35,7 @@ func (receiver *User) ListenMessage() {
 		_, err := receiver.conn.Write([]byte(msg + "\n"))
 		if err != nil {
 			fmt.Println("conn write error:", err)
+			return
 		}
 	}
 }

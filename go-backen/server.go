@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"runtime"
 	"sync"
+	"time"
 )
 
 type Server struct {
@@ -54,8 +56,10 @@ func (receiver *Server) handler(con net.Conn) {
 	fmt.Println("链接建立成功")
 
 	user := NewUser(con, receiver)
-
 	user.Online()
+
+	// 监听用户是否活跃
+	isLive := make(chan bool)
 
 	// 接受客户端消息
 	go func(conn net.Conn) {
@@ -76,8 +80,31 @@ func (receiver *Server) handler(con net.Conn) {
 			msg := string(buf[:n-1])
 			// 用户消息广播
 			user.DoMessage(msg)
+			// 用户的任意消息到达，用户活跃
+			isLive <- true
 		}
 	}(con)
+	idleDuration := 5 * time.Millisecond
+	idleTimeout := time.NewTimer(idleDuration)
+	for {
+		idleTimeout.Reset(idleDuration)
+		select {
+		case <-isLive:
+			//触发定时器
+		case <-idleTimeout.C:
+			// 10秒没有收到消息，则关闭连接
+
+			user.SendMsg("time out")
+			close(user.C)
+			err := con.Close()
+			if err != nil {
+				fmt.Println("用户链接关闭失败", err)
+				return
+			}
+			//return
+			runtime.Goexit()
+		}
+	}
 }
 
 func (receiver *Server) Start() {
