@@ -84,7 +84,7 @@ func (receiver *Server) handler(con net.Conn) {
 			isLive <- true
 		}
 	}(con)
-	idleDuration := 5 * time.Millisecond
+	idleDuration := 25 * time.Second
 	idleTimeout := time.NewTimer(idleDuration)
 	for {
 		idleTimeout.Reset(idleDuration)
@@ -94,7 +94,7 @@ func (receiver *Server) handler(con net.Conn) {
 		case <-idleTimeout.C:
 			// 10秒没有收到消息，则关闭连接
 
-			user.SendMsg("time out")
+			user.SendMsg("time out\r\n")
 			close(user.C)
 			err := con.Close()
 			if err != nil {

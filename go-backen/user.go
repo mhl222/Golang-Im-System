@@ -100,6 +100,31 @@ func (receiver *User) DoMessage(msg string) {
 			receiver.Name = newName
 			receiver.SendMsg("rename success\r\n")
 		}
+	} else if len(msg) > 4 && msg[0:3] == "to|" {
+		//  私聊消息
+		//	to|张三|你好，张三你好
+
+		// 获取对方的用户名
+		remoteName := strings.Split(msg, "|")[1]
+		if remoteName == "" {
+			receiver.SendMsg("Usage: to|<name>|<message>\r\n")
+			return
+		}
+		// 根据用户名，得到对方User对象
+		remoteUser, ok := receiver.server.OnlineMap[remoteName]
+		if !ok {
+			receiver.SendMsg("The user is not online\r\n")
+			return
+		}
+		//	获取发送对象
+		msg = strings.Split(msg, "|")[2]
+		if msg == "" {
+			receiver.SendMsg("The message is empty\r\n")
+			return
+		}
+		// 发送消息
+		remoteUser.SendMsg(receiver.Name + " Private message to you: " + msg + "\r\n")
+
 	} else {
 		receiver.server.BroadCast(receiver, msg)
 	}
